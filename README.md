@@ -1,2 +1,2 @@
-# imager - 
+# imager
 Free soft for pictures
