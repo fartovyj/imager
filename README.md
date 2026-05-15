@@ -1,2 +1,1 @@
-# imager
-Free soft for pictures
+# IMAGER - tools for pictures
