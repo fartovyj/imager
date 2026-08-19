@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Imager</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Cdefs%3E%3ClinearGradient%20id='g'%20x1='0'%20y1='0'%20x2='1'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%234da6ff'/%3E%3Cstop%20offset='1'%20stop-color='%23a855f7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='url%28%23g%29'/%3E%3Ccircle%20cx='11.5'%20cy='11'%20r='2.8'%20fill='%23fff'/%3E%3Cpath%20d='M5%2024l6.5-8%204.5%205.5%203.5-4L27%2024z'%20fill='%23fff'/%3E%3C/svg%3E">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #12121a; color: #e0e0e0; min-height: 100vh; padding: 24px 16px 40px; }
+    body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 20%, rgba(77,166,255,0.06) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(120,80,255,0.05) 0%, transparent 60%); pointer-events: none; z-index: 0; }
+    .wrap { max-width: 670px; margin: 0 auto; position: relative; z-index: 1; }
+    .header { text-align: center; margin-bottom: 28px; }
+    .header h1 { font-size: 29px; font-weight: 800; color: #4da6ff; margin-bottom: 6px; letter-spacing: -0.5px; }
+    .header h1 span { background: linear-gradient(135deg, #4da6ff, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .header p { font-size: 13px; color: #52526b; letter-spacing: 1px; text-transform: uppercase; }
+    .header p .dot { font-size: 18px; vertical-align: -1px; }
+    .tabs { display: flex; justify-content: space-between; gap: 4px; margin-bottom: 20px; background: #111118; border-radius: 14px; padding: 5px 7px; width: calc(100% + 50px); margin-left: -25px; border: 1px solid #1e1e2e; overflow-x: auto; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab { flex: 0 1 auto; min-width: auto; padding: 10px 14px; margin: 2px 0; font-size: 14px; font-weight: 800; border: none; border-radius: 10px; background: none; color: #52526b; cursor: pointer; transition: all 0.2s; text-align: center; letter-spacing: 0.3px; white-space: nowrap; }
+    .tab { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .tab svg { flex: none; opacity: 0.85; }
+    .tab.active svg { opacity: 1; }
+    .tab.active { background: #1e1e2e; color: #fff; box-shadow: 0 0 0 1px #2a2a4a; }
+    .tab:hover:not(.active) { color: #888; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .sub-tabs { display: flex; gap: 10px; margin-bottom: 16px; }
+    .sub-tab { flex: 1; padding: 9px; font-size: 12px; font-weight: 700; border: 1px solid #1e1e2e; border-radius: 10px; background: none; color: #52526b; cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px; }
+    .sub-tab:hover:not(.active) { border-color: #4da6ff; color: #4da6ff; background: rgba(77,166,255,0.08); }
+    .sub-tab.active { border-color: #9465cf; color: #fff; background: #9465cf24; }
+    .drop-zone { border: 2px dashed #373753; border-radius: 16px; padding: 15px 15px; text-align: center; cursor: pointer; transition: all 0.25s; background: #000000; margin-bottom: 14px; }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: #9465cf; background: #9465cf14; transform: translateY(-1px); }
+    .drop-icon { font-size: 30px; margin-bottom: 10px; line-height: 0; color: #4a4a63; transition: color 0.25s; }
+    .drop-zone:hover .drop-icon, .drop-zone.drag-over .drop-icon { color: #9465cf; }
+    .drop-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .drop-sub { font-size: 12px; color: #52526b; }
+    .settings { background: #111118; border: 1px solid #1e1e2e; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+    .setting-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+    .setting-row:last-child { margin-bottom: 0; }
+    .setting-label { font-size: 12px; color: #6b6b8a; min-width: 80px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    input[type="range"] { flex: 1; min-width: 100px; -webkit-appearance: none; appearance: none; height: 6px; background: linear-gradient(135deg, #4da6ff, #a855f7); border-radius: 3px; outline: none; cursor: pointer; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: linear-gradient(135deg, #4da6ff, #a855f7); border: 2px solid #fff; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+    input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: linear-gradient(135deg, #4da6ff, #a855f7); border: 2px solid #fff; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+    .setting-value { font-size: 13px; font-weight: 700; color: #fff; min-width: 40px; text-align: right; }
+    input[type="number"] { color-scheme: dark; background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 8px; color: #fff; padding: 8px 10px; font-size: 13px; width: 75px; text-align: center; font-weight: 600; }
+    /* нативные стрелки скрыты: у них своя серая плашка, которую стилями не перекрасить.
+       Вместо них — свои кнопки .dim-spin, на фоне самого поля */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; }
+    .dim-spin { position: absolute; right: 5px; top: 5px; display: flex; flex-direction: column; gap: 2px; }
+    .dim-spin button { width: 17px; height: 15px; padding: 0; border: none; border-radius: 4px; background: #24243e; color: #9a9ac0; font-size: 8px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    .dim-spin button:hover { background: #9465cf; color: #fff; }
+    select { background-color: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 8px; color: #fff; padding: 8px 30px 8px 20px; font-size: 12px; flex: 1; outline: none; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23fff' d='M0 0l5 6 5-6z'/></svg>"); background-repeat: no-repeat; background-position: right 18px center; }
+    select:focus { border-color: #2a2a4a; }
+    .file-check { display: flex; align-items: center; padding-right: 2px; }
+    .file-check input { width: 17px; height: 17px; accent-color: #9465cf; cursor: pointer; }
+    .file-item.picked { border-color: #9465cf; background: #9465cf14; }
+    .file-item.active { box-shadow: 0 0 0 1px #4da6ff88; }
+    /* в «Кропе» выбранный файл — тот, что сейчас в редакторе: подсвечиваем заметнее */
+    #list-crop .file-item.picked { border-color: #4da6ff; background: #4da6ff1a; box-shadow: 0 0 0 1px #4da6ff55; }
+    #list-crop .file-item:hover { border-color: #4da6ff66; }
+    .file-busy { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: #a855f7; white-space: nowrap; padding-right: 2px; }
+    .file-busy i { width: 11px; height: 11px; border: 2px solid #a855f7; border-top-color: transparent; border-radius: 50%; animation: toastspin 0.7s linear infinite; }
+    .file-chain { font-size: 10.5px; color: #6b6b8a; margin-top: 3px; letter-spacing: 0.2px; }
+    .pool-bar { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: #52526b; margin-bottom: 10px; padding: 0 2px; flex-wrap: wrap; text-transform: none; }
+    .pool-bar > span { flex: 1; min-width: 140px; }
+    .pool-bar button { background: #16161f; border: 1px solid #26263a; border-radius: 7px; color: #7a7a9c; font-size: 11px; font-weight: 600; cursor: pointer; padding: 4px 10px; line-height: 1.4; font-family: inherit; text-transform: none; transition: all 0.2s; }
+    .pool-bar button:hover { border-color: #4da6ff; color: #4da6ff; text-decoration: none; }
+    @keyframes toastspin { to { transform: rotate(360deg); } }
+    .file-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .file-item { display: flex; align-items: center; gap: 10px; background: #111118; border: 1px solid #1e1e2e; border-radius: 12px; padding: 12px; transition: border-color 0.2s; }
+    .file-item:hover { border-color: #2a2a4a; }
+    .file-thumb { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; flex-shrink: 0; background: #1a1a2e; }
+    .file-info { flex: 1; min-width: 0; }
+    .file-name { font-size: 12px; font-weight: 600; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; }
+    .file-meta { font-size: 11px; color: #52526b; }
+    .saved { color: #9465cf; font-weight: 700; }
+    .bigger { color: #f59e0b; }
+    .file-status { font-size: 16px; flex-shrink: 0; }
+    .file-status.done { font-size: 13px; font-weight: 800; background: linear-gradient(135deg, #4da6ff, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .btn-primary { width: 100%; padding: 13px; font-size: 16px; font-weight: 800; border: none; border-radius: 12px; background: linear-gradient(135deg, #4da6ff, #a855f7); color: #fff; cursor: pointer; transition: opacity 0.2s, transform 0.1s; margin-bottom: 8px; letter-spacing: 0.5px; }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.35; cursor: default; transform: none; }
+    .btn-secondary { width: 100%; padding: 11px; font-size: 13px; font-weight: 600; border: 1px solid #343449; border-radius: 12px; background: none; color: #52526b; cursor: pointer; transition: all 0.2s; margin-bottom: 6px; }
+    .btn-secondary:hover { background: #111118; color: #fff; border-color: #2a2a4a; }
+    .btn-secondary[data-zip] { border: 1px solid transparent; background: linear-gradient(#12121a, #12121a) padding-box, linear-gradient(135deg, #4da6ff, #a855f7) border-box; color: #fff; }
+    .btn-secondary[data-zip]:hover { border: 1px solid #343449; background: #111118; color: #52526b; }
+    .btn-sm { background: linear-gradient(135deg, #4da6ff, #a855f7); color: #fff; border: none; border-radius: 8px; padding: 2px 10px; font-size: 18px; font-weight: 500; cursor: pointer; flex-shrink: 0; }
+    .btn-sm:hover { opacity: 0.85; }
+    .btn-undo { background: black; color: #3faf25; border: 1px solid #343449; border-radius: 8px; padding: 4px 9px; font-size: 15px; line-height: 1; cursor: pointer; flex-shrink: 0; transition: all 0.2s; }
+    .btn-undo:hover { border-color: #fff; color: #fff; }
+    .btn-del { background: none; color: #ff4d55; border: none; padding: 4px 6px; font-size: 15px; line-height: 1; cursor: pointer; flex-shrink: 0; transition: all 0.2s; }
+    .btn-del:hover { color: #ff7a80; }
+    .presets { display: flex; gap: 6px; flex-wrap: wrap; }
+    .preset { padding: 6px 12px; font-size: 11px; font-weight: 700; border: 1px solid #1e1e2e; border-radius: 8px; background: none; color: #555; cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px; }
+    .preset:hover { border-color: #4da6ff; color: #4da6ff; background: rgba(77,166,255,0.08); }
+    .preset.active { border-color: #9465cf; color: #fff; background: #9465cf24; }
+    .dim-field { position: relative; display: inline-block; }
+    .dim-hint { position: absolute; left: 0; right: 26px; bottom: 4px; text-align: center; font-size: 8.5px; letter-spacing: 0.4px; color: #52526b; pointer-events: none; text-transform: uppercase; }
+    .dim-field input[type="number"] { width: 92px; height: 46px; padding: 6px 26px 16px 8px; line-height: 1; text-align: center; }
+    /* два размера одного плагина: показываем как одну группу */
+    .preset-group { display: inline-flex; align-items: center; gap: 4px; padding: 3px 6px 3px 8px; border: 1px dashed #2a2a3d; border-radius: 10px; }
+    .preset-group__label { font-size: 10px; font-weight: 700; color: #52526b; letter-spacing: 0.4px; text-transform: uppercase; }
+    .preset-group .preset { padding: 5px 9px; }
+    .checker { background-color: #abb0bf; background-image:
+      linear-gradient(45deg, #8f95a6 25%, transparent 25%), linear-gradient(-45deg, #8f95a6 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #8f95a6 75%), linear-gradient(-45deg, transparent 75%, #8f95a6 75%);
+      background-size: 18px 18px; background-position: 0 0, 0 9px, 9px -9px, -9px 0; }
+    .rc-steps { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11px; color: #6b6b8a; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #1e1e2e; }
+    .rc-steps span { display: inline-flex; align-items: center; gap: 5px; }
+    .rc-steps b { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; background: #9465cf24; border: 1px solid #9465cf66; color: #b48ce0; font-size: 10px; font-weight: 700; }
+    .btn-apply { margin-left: auto; background: linear-gradient(135deg, #4da6ff, #a855f7); border: none; border-radius: 8px; color: #fff; font-size: 11.5px; font-weight: 700; padding: 9px 16px; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; }
+    .btn-apply:hover { opacity: 0.85; }
+    .btn-apply:disabled { opacity: 0.4; cursor: not-allowed; }
+    /* margin-right — чтобы пипетка не липла к образцу цвета */
+    .btn-pick { background: linear-gradient(135deg, #4da6ff, #a855f7); border: none; border-radius: 30px; color: #000000; font-size: 12px; font-weight: 700; padding: 9px 19px; margin-right: 20px; cursor: pointer; white-space: nowrap; transition: opacity 0.2s, box-shadow 0.2s; }
+    .btn-pick:hover { opacity: 0.85; }
+    .btn-pick.on { box-shadow: 0 0 0 2px #14161c, 0 0 0 4px #a900ff; }
+    .swatch { width: 26px; height: 26px; border-radius: 6px; border: 1px solid #2a2a4a; flex-shrink: 0; background: #fff; }
+    .hex-input { background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 8px; color: #fff; padding: 7px 8px; font-size: 12px; width: 82px; text-align: center; font-family: monospace; }
+    input[type="color"] { width: 34px; height: 34px; padding: 0; border: 1px solid #2a2a4a; border-radius: 8px; background: #1a1a2e; cursor: pointer; }
+    #rcprev { max-width: 100%; max-height: 100%; width: auto; height: auto; display: block; }
+    #rcprev.picking { cursor: crosshair; }
+    .prev-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 50px; padding: 0 14px; background: #111118; border: 1px solid #1e1e2e; border-radius: 12px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.2s; }
+    .prev-head:hover { border-color: #9465cf; }
+    .prev-head b { font-size: 12px; font-weight: 700; color: #8a8aa8; letter-spacing: 0.4px; text-transform: uppercase; }
+    .prev-head i { display: flex; color: #6b6b8a; transition: transform 0.25s; transform: rotate(180deg); }
+    .prev-head.closed i { transform: rotate(0deg); }
+    .prev-head:hover i { color: #9465cf; }
+    .prev-body[hidden] { display: none; }
+    .prev-info { font-size: 11px; color: #6b6b8a; margin-bottom: 6px; padding: 0 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .prev-stage { aspect-ratio: 16 / 9; align-items: center; overflow: hidden; }
+    .prev-stage > * { max-height: 100%; min-height: 0; }
+    /* Шторка «до/после»: сверху лежит сжатая копия, обрезанная по позиции ручки */
+    .cmp { position: relative; display: block; height: 100%; width: auto; max-width: 100%; line-height: 0; cursor: ew-resize; user-select: none; --x: 50%; }
+    .cmp img { display: block; height: 100%; width: auto; max-width: 100%; object-fit: contain; }
+    #cmp-b { position: absolute; top: 0; left: 0; width: 100%; height: 100%; clip-path: inset(0 0 0 var(--x)); }
+    .cmp-line { position: absolute; top: 0; bottom: 0; left: var(--x); width: 2px; margin-left: -1px; background: #fff; box-shadow: 0 0 8px rgba(0,0,0,0.55); pointer-events: none; }
+    .cmp-grip { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #4da6ff, #a855f7); box-shadow: 0 2px 8px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; }
+    .cmp-tag { position: absolute; top: 8px; font-size: 10px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: #fff; background: rgba(0,0,0,0.55); padding: 3px 8px; border-radius: 6px; pointer-events: none; line-height: 1.3; }
+    .cmp-l { left: 8px; }
+    .cmp-r { right: 8px; }
+    #cprev { max-width: 100%; max-height: 100%; width: auto; height: auto; display: block; object-fit: contain; }
+    .crop-fit { align-items: center; }
+    .crop-fit .crop-wrap img { max-height: 353px; width: auto; }
+    #rprev, #bgprev { max-width: 100%; max-height: 100%; width: auto; height: auto; display: block; object-fit: contain; }
+    .crop-stage { display: flex; justify-content: center; width: 100%; background: #abb0bf; padding: 12px; border-radius: 12px; margin-bottom: 14px; box-shadow: 0 0 0 1px #2a2a4a; box-sizing: border-box; }
+    .crop-wrap { max-width: 100%; }
+    .crop-wrap { position: relative; display: block; max-width: 100%; user-select: none; cursor: crosshair; }
+    .crop-wrap img { max-width: 100%; max-height: 100%; display: block; pointer-events: none; }
+    .crop-sel { position: absolute; border: 2px solid #4da6ff; background: rgba(77,166,255,0.1); cursor: move; }
+    .crop-handle { position: absolute; width: 12px; height: 12px; background: #4da6ff; border-radius: 2px; }
+    .crop-handle.tl { top: -6px; left: -6px; cursor: nw-resize; }
+    .crop-handle.tr { top: -6px; right: -6px; cursor: ne-resize; }
+    .crop-handle.bl { bottom: -6px; left: -6px; cursor: sw-resize; }
+    .crop-handle.br { bottom: -6px; right: -6px; cursor: se-resize; }
+        /* высота зарезервирована всегда — иначе при появлении цифр превью подпрыгивает */
+    .crop-info { font-size: 12px; color: #555; text-align: center; margin-bottom: 10px; font-weight: 600; min-height: 15px; line-height: 15px; }
+    .link-btn { background: none; border: none; color: #4a4a63; font-size: inherit; font-family: inherit; cursor: pointer; padding: 0; text-decoration: underline; }
+    .link-btn:hover { color: #4da6ff; }
+    .privacy { text-align: center; font-size: 11px; color: #52526b; margin-top: 15px; letter-spacing: 0.1px; }
+    input[type="file"] { display: none; }
+    @media (max-width: 480px) {
+      [id$="-wrap"] { flex-direction: column !important; }
+      [id$="-wrap"] .btn-secondary { margin-bottom: 6px !important; }
+    }
+  </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+
+<div class="wrap">
+<div class="header">
+  <h1>🛠 <span>Imager</span></h1>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="convert"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3"/><path d="M20 16H7l3 3"/></svg>Конвертер</button>
+  <button class="tab" data-tab="resize"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="13" height="13" rx="1.5"/><path d="M9 21h12V9"/></svg>Размер</button>
+  <button class="tab" data-tab="crop"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>Кроп</button>
+  <button class="tab" data-tab="compress"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6"/><path d="M10 14l-7 7"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/></svg>Сжатие</button>
+  <button class="tab" data-tab="bgremove"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 14l9 5 9-5"/></svg>Фон</button>
+  <button class="tab" data-tab="recolor"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c4.5 4.2 7 7.3 7 10a7 7 0 0 1-14 0c0-2.7 2.5-5.8 7-10z"/></svg>Окрас</button>
+</div>
+
+<!-- КОНВЕРТЕР -->
+<div class="panel active" id="panel-convert">
+  <div class="drop-zone" id="dz-convert">
+    <div class="drop-icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3"/><path d="M20 16H7l3 3"/></svg></div>
+    <div class="drop-title">Нажми или перетащи файлы</div>
+    <div class="drop-sub">JPG, PNG, GIF — любой формат</div>
+  </div>
+  <div class="sub-tabs">
+    <button class="sub-tab active" data-fmt="image/webp">→ WEBP</button>
+    <button class="sub-tab" data-fmt="image/png">→ PNG</button>
+    <button class="sub-tab" data-fmt="image/jpeg">→ JPG</button>
+    <button class="sub-tab" data-fmt="image/avif">→ AVIF</button>
+  </div>
+  <input type="file" id="fi-convert" accept="image/*" multiple>
+  <div class="settings">
+    <div class="setting-row">
+      <span class="setting-label">Качество</span>
+      <input type="range" id="cq" min="10" max="100" value="90">
+      <span class="setting-value" id="cqv">90%</span>
+    </div>
+  </div>
+  <div id="cprev-wrap" style="display:none">
+    <div class="prev-head" data-prev="cprev"><b>Скрыть предпросмотр</b><i><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></i></div>
+    <div class="prev-body" id="cprev-body">
+      <div class="crop-stage checker prev-stage"><img id="cprev" alt="предпросмотр"></div>
+    </div>
+  </div>
+  <div class="pool-bar" id="bar-convert"></div>
+  <div class="file-list" id="list-convert"></div>
+  <div id="act-convert" style="display:none">
+    <button class="btn-primary" id="btn-convert">Конвертировать все</button>
+    <div style="display:none;gap:8px" id="dla-convert-wrap">
+      <button class="btn-secondary" style="flex:1;margin:0" data-zip="convert">Скачать ZIP-архив</button>
+    </div>
+  </div>
+</div>
+
+<!-- РАЗМЕР -->
+<div class="panel" id="panel-resize">
+  <div class="drop-zone" id="dz-resize">
+    <div class="drop-icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="13" height="13" rx="1.5"/><path d="M9 21h12V9"/></svg></div>
+    <div class="drop-title">Нажми или перетащи файлы</div>
+    <div class="drop-sub">Изменение размера изображений</div>
+  </div>
+  <input type="file" id="fi-resize" accept="image/*" multiple>
+  <div class="settings">
+    <div class="setting-row">
+      <span class="setting-label">Пресеты</span>
+      <div class="presets">
+        <button class="preset" data-w="3840" data-h="2160">4K</button>
+        <button class="preset" data-w="2560" data-h="1440">QHD</button>
+        <button class="preset" data-w="1920" data-h="1080">FullHD</button>
+        <button class="preset" data-w="1600" data-h="900">HD+</button>
+        <button class="preset" data-w="1280" data-h="720">HD</button>
+        <span class="preset-group" title="Два размера одного плагина: большой и вдвое меньший">
+          <span class="preset-group__label">Плагин</span>
+          <button class="preset" data-w="850" data-h="450">850&times;450</button>
+          <button class="preset" data-w="425" data-h="225">425&times;225</button>
+        </span>
+        <button class="preset" data-w="512" data-h="512" data-custom="1">Свой</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Размер</span>
+      <span class="dim-field"><input type="number" id="rw" value="512" min="1" max="9999"><span class="dim-hint">ширина</span><span class="dim-spin"><button type="button" data-spin="rw" data-d="1">▲</button><button type="button" data-spin="rw" data-d="-1">▼</button></span></span>
+      <span style="color:#555;padding:0 4px">×</span>
+      <span class="dim-field"><input type="number" id="rh" value="512" min="1" max="9999"><span class="dim-hint">высота</span><span class="dim-spin"><button type="button" data-spin="rh" data-d="1">▲</button><button type="button" data-spin="rh" data-d="-1">▼</button></span></span>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Режим</span>
+      <select id="rfit">
+        <option value="cover" selected>Заполнить (cover)</option>
+        <option value="contain">Вписать (contain)</option>
+        <option value="stretch">Растянуть</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Формат</span>
+      <select id="rfmt">
+        <option value="image/webp">WebP</option>
+        <option value="image/jpeg">JPG</option>
+        <option value="image/png">PNG</option>
+        <option value="image/avif">AVIF</option>
+      </select>
+    </div>
+  </div>
+  <div id="rprev-wrap" style="display:none">
+    <div class="prev-head" data-prev="rprev"><b>Скрыть предпросмотр</b><i><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></i></div>
+    <div class="prev-body" id="rprev-body">
+      <div class="crop-stage prev-stage"><canvas id="rprev"></canvas></div>
+    </div>
+  </div>
+  <div class="pool-bar" id="bar-resize"></div>
+  <div class="file-list" id="list-resize"></div>
+  <div id="act-resize" style="display:none">
+    <button class="btn-primary" id="btn-resize">Изменить размер</button>
+    <div style="display:none;gap:8px" id="dla-resize-wrap">
+      <button class="btn-secondary" style="flex:1;margin:0" data-zip="resize">Скачать ZIP-архив</button>
+    </div>
+  </div>
+</div>
+
+<!-- КРОП -->
+<div class="panel" id="panel-crop">
+  <div class="drop-zone" id="dz-crop">
+    <div class="drop-icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg></div>
+    <div class="drop-title">Нажми или перетащи изображение</div>
+    <div class="drop-sub">Одно изображение для обрезки</div>
+  </div>
+  <input type="file" id="fi-crop" accept="image/*" multiple>
+  <div id="crop-editor" style="display:none">
+    <div class="prev-head" data-prev="crop"><b>Скрыть предпросмотр</b><i><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></i></div>
+    <div class="prev-body" id="crop-body">
+    <div class="crop-info" id="crop-info"></div>
+    <div class="crop-stage crop-fit">
+    <div class="crop-wrap" id="crop-wrap">
+      <img id="crop-img" alt="crop">
+      <div id="crop-sel" class="crop-sel" style="display:none">
+        <div class="crop-handle tl" data-h="tl"></div>
+        <div class="crop-handle tr" data-h="tr"></div>
+        <div class="crop-handle bl" data-h="bl"></div>
+        <div class="crop-handle br" data-h="br"></div>
+      </div>
+    </div>
+    </div>
+    <div class="settings">
+      <div class="setting-row">
+        <span class="setting-label">Формат</span>
+        <select id="crop-fmt">
+          <option value="image/webp">WebP</option>
+          <option value="image/jpeg">JPG</option>
+          <option value="image/png">PNG</option>
+          <option value="image/avif">AVIF</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-primary" id="btn-crop">Обрезать</button>
+    <button class="btn-secondary" id="btn-crop-reset">Сбросить выделение</button>
+    </div>
+  </div>
+  <div class="pool-bar" id="bar-crop"></div>
+  <div class="file-list" id="list-crop"></div>
+  <div style="display:none;gap:8px" id="dla-crop-wrap">
+    <button class="btn-secondary" style="flex:1;margin:0" data-zip="crop">Скачать ZIP-архив</button>
+  </div>
+</div>
+
+<!-- ОКРАС -->
+<div class="panel" id="panel-recolor">
+  <div class="drop-zone" id="dz-recolor">
+    <div class="drop-icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c4.5 4.2 7 7.3 7 10a7 7 0 0 1-14 0c0-2.7 2.5-5.8 7-10z"/></svg></div>
+    <div class="drop-title">Нажми или перетащи файлы</div>
+    <div class="drop-sub">Замена цвета на изображении</div>
+  </div>
+  <input type="file" id="fi-recolor" accept="image/*" multiple>
+
+  <div class="settings">
+    <div class="rc-steps">
+      <span><b>1</b> пипеткой ткнуть в цвет на картинке</span>
+      <span><b>2</b> выбрать новый цвет и режим</span>
+      <span><b>3</b> подогнать диапазон и применить</span>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Заменить</span>
+      <button class="btn-pick" id="rc-pick" title="Взять цвет с картинки">🎯 Пипетка</button>
+      <span class="swatch" id="rc-from-sw"></span>
+      <input type="text" id="rc-from" value="#ffffff" maxlength="7" class="hex-input">
+      <span style="color:#555">→</span>
+      <input type="color" id="rc-to-color" value="#e6b450">
+      <input type="text" id="rc-to" value="#e6b450" maxlength="7" class="hex-input">
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Диапазон</span>
+      <input type="range" id="rc-tol" min="1" max="100" value="50">
+      <span class="setting-value" id="rc-tol-v">50%</span>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Режим</span>
+      <select id="rc-mode">
+        <option value="keep" selected>Сохранить тени и блики</option>
+        <option value="flat">Залить ровно</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Формат</span>
+      <select id="rc-fmt">
+        <option value="" selected>Как у оригинала</option>
+        <option value="image/webp">WebP</option>
+        <option value="image/jpeg">JPG</option>
+        <option value="image/png">PNG</option>
+        <option value="image/avif">AVIF</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="rcprev-wrap" style="display:none">
+    <div class="prev-head" data-prev="rcprev"><b>Скрыть предпросмотр</b><i><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></i></div>
+    <div class="prev-body" id="rcprev-body">
+      <div class="crop-info" id="rc-info"></div>
+      <div class="crop-stage checker prev-stage"><canvas id="rcprev"></canvas></div>
+    </div>
+  </div>
+
+  <div class="pool-bar" id="bar-recolor"></div>
+  <div class="file-list" id="list-recolor"></div>
+  <div id="act-recolor" style="display:none">
+    <button class="btn-primary" id="btn-recolor">Перекрасить</button>
+    <div style="display:none;gap:8px" id="dla-recolor-wrap">
+      <button class="btn-secondary" style="flex:1;margin:0" data-zip="recolor">Скачать ZIP-архив</button>
+    </div>
+  </div>
+</div>
+
+<!-- СЖАТИЕ -->
+<div class="panel" id="panel-compress">
+  <div class="drop-zone" id="dz-compress">
+    <div class="drop-icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6"/><path d="M10 14l-7 7"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/></svg></div>
+    <div class="drop-title">Нажми или перетащи файлы</div>
+    <div class="drop-sub">Уменьшаем вес без смены формата</div>
+  </div>
+  <input type="file" id="fi-compress" accept="image/*" multiple>
+  <div class="settings">
+    <div class="setting-row">
+      <span class="setting-label">Качество</span>
+      <input type="range" id="sq" min="30" max="95" value="75">
+      <span class="setting-value" id="sqv">75%</span>
+    </div>
+  </div>
+  <div id="sprev-wrap" style="display:none">
+    <div class="prev-head" data-prev="sprev"><b>Скрыть предпросмотр</b><i><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></i></div>
+    <div class="prev-body" id="sprev-body">
+      <div class="crop-info" id="sprev-info"></div>
+      <div class="crop-stage prev-stage">
+        <div class="cmp" id="cmp">
+          <img id="cmp-a" alt="до сжатия">
+          <img id="cmp-b" alt="после сжатия">
+          <div class="cmp-line"><span class="cmp-grip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l-5 6 5 6"/><path d="M15 6l5 6-5 6"/></svg></span></div>
+          <span class="cmp-tag cmp-l">до</span>
+          <span class="cmp-tag cmp-r">после</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="pool-bar" id="bar-compress"></div>
+  <div class="file-list" id="list-compress"></div>
+  <div id="act-compress" style="display:none">
+    <button class="btn-primary" id="btn-compress">Сжать все</button>
+    <div style="display:none;gap:8px" id="dla-compress-wrap">
+      <button class="btn-secondary" style="flex:1;margin:0" data-zip="compress">Скачать ZIP-архив</button>
+    </div>
+  </div>
+</div>
+
+<!-- БЕЗ ФОНА -->
+<div class="panel" id="panel-bgremove">
+  <div class="drop-zone" id="dz-bgremove">
+    <div class="drop-icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 14l9 5 9-5"/></svg></div>
+    <div class="drop-title">Нажми или перетащи файлы</div>
+    <div class="drop-sub">Автоматическое удаление фона (первый запуск ~170MB)</div>
+  </div>
+  <input type="file" id="fi-bgremove" accept="image/*" multiple>
+  <div class="settings">
+    <div class="setting-row">
+      <span class="setting-label">Формат</span>
+      <select id="bgfmt">
+        <option value="image/png" selected>PNG (прозрачный)</option>
+        <option value="image/webp">WebP (прозрачный)</option>
+        <option value="image/avif">AVIF (прозрачный)</option>
+      </select>
+    </div>
+  </div>
+  <div id="bgprev-wrap" style="display:none">
+    <div class="prev-head" data-prev="bgprev"><b>Скрыть предпросмотр</b><i><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></i></div>
+    <div class="prev-body" id="bgprev-body">
+      <div class="crop-stage checker prev-stage"><img id="bgprev" alt="превью"></div>
+    </div>
+  </div>
+  <div class="pool-bar" id="bar-bgremove"></div>
+  <div class="file-list" id="list-bgremove"></div>
+  <div id="act-bgremove" style="display:none">
+    <button class="btn-primary" id="btn-bgremove">Удалить фон</button>
+    <div style="display:none;gap:8px" id="dla-bgremove-wrap">
+      <button class="btn-secondary" style="flex:1;margin:0" data-zip="bgremove">Скачать ZIP-архив</button>
+    </div>
+  </div>
+</div>
+
+<div class="privacy">🔒 Файлы не покидают устройство · <button id="btn-clear-cache" class="link-btn">сбросить кэш моделей</button></div>
+</div>
+
+<script>
+// ═══════════════ ОБЩИЙ ПУЛ ФАЙЛОВ ═══════════════
+// Один список на все вкладки: загрузил один раз — обрезал, сжал, перекодировал
+// подряд, не перезагружая. Каждая операция заменяет текущую версию файла
+// и дописывает шаг в историю; оригинал всегда сохраняется отдельно.
+const pool = [];
+let uid = 0;
+let cropId = null;   // активный файл: он в редакторе «Кропа» и в окнах превью (галочки — отдельно)
+
+function addToPool(fileList) {
+  for (const f of fileList) {
+    if (!f.type.startsWith('image/')) continue;
+    if (pool.find(x => x.origName === f.name && x.orig.size === f.size)) continue;
+    pool.push({
+      id: ++uid,
+      origName: f.name,
+      name: f.name,
+      orig: f,
+      current: f,
+      history: [],
+      selected: true
+    });
+    cropId = uid;          // редактируем последний загруженный
+  }
+  renderAll();
+}
+
+function selectedItems() {
+  return pool.filter(x => x.selected);
+}
+
+// Записать результат операции: текущая версия заменяется, шаг уходит в историю
+function applyResult(item, blob, opLabel, newName) {
+  item.history.push({ op: opLabel, size: blob.size, name: item.name });
+  item.current = blob;
+  if (newName) item.name = newName;
+  // Редактор «Кропа» держит свою копию картинки. Если правили активный файл
+  // в другой вкладке (окрас, размер, фон), копию надо обновить — иначе в «Кропе»
+  // останется прежняя версия, хотя везде уже новая.
+  if (item.id === cropId && document.getElementById('crop-editor').style.display !== 'none') {
+    loadCropFromPool();
+  }
+}
+
+function resetItem(id) {
+  const it = pool.find(x => x.id === id);
+  if (!it) return;
+  it.current = it.orig;
+  it.name = it.origName;
+  it.history = [];
+  // превью «Окраса» рисует замену на лету — иначе после отката оно снова
+  // покрасит оригинал теми же настройками, и будет казаться, что откат не сработал
+  if (typeof rc === 'object' && it.id === cropId) rc.touched = false;
+  renderAll();
+  // редактор кропа держит свою копию картинки — перезагружаем, иначе там
+  // останется обрезанная версия, хотя в списке уже оригинал
+  if (it.id === cropId && document.getElementById('crop-editor').style.display !== 'none') {
+    loadCropFromPool();
+  }
+}
+
+function toggleItem(id) {
+  const it = pool.find(x => x.id === id);
+  if (it) { it.selected = !it.selected; renderAll(); }
+}
+
+function pickAll(v) {
+  pool.forEach(x => x.selected = v);
+  renderAll();
+}
+function clearPool() {
+  pool.length = 0;
+  document.getElementById('crop-editor').style.display = 'none';
+  cropState = null;
+  renderAll();
+}
+
+function selectOnly(id) {
+  pool.forEach(x => x.selected = x.id === id);
+  renderAll();
+}
+
+const NS_LIST = ['convert', 'resize', 'compress', 'bgremove', 'recolor'];
+const BAR_LIST = NS_LIST.concat('crop');
+function renderAll() {
+  NS_LIST.forEach(render);
+  if (typeof schedulePreview === 'function') schedulePreview();
+  if (typeof renderBgPreview === 'function') renderBgPreview();
+  if (typeof renderConvertPreview === 'function') renderConvertPreview();
+  if (typeof scheduleComparePreview === 'function') scheduleComparePreview();
+  if (typeof scheduleRecolorPreview === 'function') scheduleRecolorPreview();
+  const nothing = pool.length > 0 && !pool.some(x => x.selected);
+  ['btn-convert', 'btn-resize', 'btn-compress', 'btn-bgremove', 'btn-recolor'].forEach(id => {
+    const b = document.getElementById(id);
+    if (!b) return;
+    b.disabled = nothing;
+    b.style.opacity = nothing ? '0.45' : '';
+    b.style.cursor = nothing ? 'not-allowed' : '';
+    if (!b.dataset.label) b.dataset.label = b.textContent;
+    b.textContent = nothing ? 'Отметьте файлы галочкой' : b.dataset.label;
+  });
+  renderCropList();
+  renderBar('crop');
+  const has = pool.length > 0;
+  NS_LIST.forEach(ns => {
+    const act = document.getElementById('act-' + ns);
+    if (act) act.style.display = has ? 'block' : 'none';
+  });
+  BAR_LIST.forEach(ns => {
+    const dla = document.getElementById('dla-' + ns + '-wrap');
+    if (dla) dla.style.display = pool.some(x => x.history.length && x.selected) ? 'flex' : 'none';
+  });
+}
+
+let convertMode = 'image/webp';
+
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => switchTab(t.dataset.tab));
+});
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
+  // файлы могли загрузить в другой вкладке — открываем их в редакторе
+  if (name === 'crop' && typeof pool !== 'undefined' && pool.length && (!cropState || cropStale())) loadCropFromPool();
+}
+// вкладку намеренно не запоминаем: при открытии всегда «Конвертер»
+localStorage.removeItem('activeTab');
+
+document.querySelectorAll('.sub-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.sub-tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    convertMode = t.dataset.fmt;
+  });
+});
+
+document.getElementById('cq').addEventListener('input', e => document.getElementById('cqv').textContent = e.target.value + '%');
+document.getElementById('sq').addEventListener('input', e => document.getElementById('sqv').textContent = e.target.value + '%');
+
+// Подсветить пресет, который совпадает с текущими размерами.
+// Не совпал ни один — значит размер свой, подсвечиваем «Свой».
+function syncPreset() {
+  const w = document.getElementById('rw').value;
+  const h = document.getElementById('rh').value;
+  const all = [...document.querySelectorAll('.preset')];
+  const hit = all.find(x => !x.dataset.custom && x.dataset.w === w && x.dataset.h === h);
+  const custom = all.find(x => x.dataset.custom);
+  all.forEach(x => x.classList.toggle('active', hit ? x === hit : x === custom));
+}
+['rw', 'rh'].forEach(id => document.getElementById(id).addEventListener('input', syncPreset));
+syncPreset();   // подсветить пресет, совпадающий со значениями по умолчанию
+
+document.querySelectorAll('.dim-spin button').forEach(btn => {
+  btn.addEventListener('click', e => {
+    const inp = document.getElementById(btn.dataset.spin);
+    const step = e.shiftKey ? 10 : 1;
+    const v = parseInt(inp.value || '0') + parseInt(btn.dataset.d) * step;
+    inp.value = Math.max(1, Math.min(9999, v));
+    syncPreset();
+  });
+});
+
+document.querySelectorAll('.preset').forEach(p => {
+  p.addEventListener('click', () => {
+    document.getElementById('rw').value = p.dataset.w;
+    document.getElementById('rh').value = p.dataset.h;
+    syncPreset();
+  });
+});
+
+function fmt(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+  return (b / 1048576).toFixed(1) + ' MB';
+}
+function extOf(mime) {
+  if (mime === 'image/webp') return '.webp';
+  if (mime === 'image/jpeg') return '.jpg';
+  if (mime === 'image/avif') return '.avif';
+  return '.png';
+}
+
+// ═══════════════════ AVIF ═══════════════════
+// Браузеры умеют AVIF показывать, но не умеют кодировать: canvas.toBlob('image/avif')
+// молча возвращает PNG. Поэтому для AVIF подключаем WASM-кодировщик (libavif).
+// Грузится ТОЛЬКО когда выбран AVIF — на остальные форматы не влияет.
+let avifMod = null, avifLoading = null;
+
+
+async function loadAvif() {
+  if (avifMod) return avifMod;
+  if (!avifLoading) {
+    avifLoading = import('https://esm.sh/@jsquash/avif@2.1.1')
+      .then(m => { avifMod = m; return m; })
+      .catch(() => {
+        avifLoading = null;
+        throw new Error('Не удалось загрузить кодировщик AVIF — нужен интернет');
+      });
+  }
+  return avifLoading;
+}
+
+// Превью результата в «Размере»: показываем, как ляжет картинка с текущими
+// настройками — особенно важно для режима «Заполнить», где края обрезаются
+let prevTimer = null;
+function schedulePreview() {
+  clearTimeout(prevTimer);
+  prevTimer = setTimeout(renderResizePreview, 150);
+}
+
+async function renderResizePreview() {
+  const wrap = document.getElementById('rprev-wrap');
+  const canvas = document.getElementById('rprev');
+  if (!wrap || !canvas) return;
+  const it = pool.find(x => x.id === cropId) || pool[0];
+  if (!it) { wrap.style.display = 'none'; return; }
+
+  const w = parseInt(document.getElementById('rw').value) || 1;
+  const h = parseInt(document.getElementById('rh').value) || 1;
+  const fit = document.getElementById('rfit').value;
+
+  const src = await toCanvas(it.current, w, h, fit);
+  canvas.width = src.width;
+  canvas.height = src.height;
+  canvas.getContext('2d').drawImage(src, 0, 0);
+
+  wrap.style.display = 'block';
+}
+
+// Превью во вкладке «Фон»: текущая версия файла на шахматке — сразу видно,
+// что стало прозрачным
+let bgPrevUrl = null;
+function renderBgPreview() {
+  const wrap = document.getElementById('bgprev-wrap');
+  const img = document.getElementById('bgprev');
+  if (!wrap || !img) return;
+  const it = pool.find(x => x.id === cropId) || pool[0];
+  if (!it) { wrap.style.display = 'none'; return; }
+  if (bgPrevUrl) URL.revokeObjectURL(bgPrevUrl);
+  bgPrevUrl = URL.createObjectURL(it.current);
+  img.src = bgPrevUrl;
+  wrap.style.display = 'block';
+}
+
+// Превью «Конвертера»: текущая версия активного файла — видно, с чем работаешь
+// (сама конвертация вида не меняет, меняет формат и вес)
+let cPrevUrl = null;
+function renderConvertPreview() {
+  const wrap = document.getElementById('cprev-wrap');
+  const img = document.getElementById('cprev');
+  if (!wrap || !img) return;
+  const it = pool.find(x => x.id === cropId) || pool[0];
+  if (!it) { wrap.style.display = 'none'; return; }
+  if (cPrevUrl) URL.revokeObjectURL(cPrevUrl);
+  cPrevUrl = URL.createObjectURL(it.current);
+  img.src = cPrevUrl;
+  wrap.style.display = 'block';
+}
+
+// Превью «Сжатия» — шторка: слева оригинал, справа результат с текущим качеством.
+// Кодируем по-настоящему, поэтому вес под картинкой честный, а не прикидка.
+let cmpTimer = null, cmpToken = 0, cmpUrls = [];
+function scheduleComparePreview() {
+  clearTimeout(cmpTimer);
+  cmpTimer = setTimeout(renderComparePreview, 300);
+}
+
+async function renderComparePreview() {
+  const wrap = document.getElementById('sprev-wrap');
+  if (!wrap) return;
+  const it = pool.find(x => x.id === cropId) || pool[0];
+  if (!it) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+
+  const info = document.getElementById('sprev-info');
+  const a = document.getElementById('cmp-a');
+  const b = document.getElementById('cmp-b');
+  const q = parseInt(document.getElementById('sq').value) / 100;
+  let mime = it.current.type;
+  if (mime !== 'image/png' && mime !== 'image/webp' && mime !== 'image/avif') mime = 'image/jpeg';
+
+  const urlA = URL.createObjectURL(it.orig);
+  cmpUrls.push(urlA);
+  a.src = urlA;
+
+  const token = ++cmpToken;
+  info.textContent = 'считаю…';
+  const canvas = await toCanvas(it.current);
+  const blob = await encodeCanvas(canvas, mime, q);
+  if (token !== cmpToken) return;      // пока считали, ползунок уехал — результат уже неактуален
+  const urlB = URL.createObjectURL(blob);
+  cmpUrls.push(urlB);
+  b.src = urlB;
+  while (cmpUrls.length > 2) URL.revokeObjectURL(cmpUrls.shift());   // две последние сейчас на экране
+
+  const d = Math.round((1 - blob.size / it.orig.size) * 100);
+  let tail;
+  if (mime === 'image/png') tail = 'PNG жмётся без потерь — ползунок на вес почти не влияет';
+  else if (d > 0) tail = '\u2212' + d + '%' + (d < 15 ? ' \u00b7 качество высокое, тяни ползунок влево — станет легче' : '');
+  else tail = '+' + Math.abs(d) + '% \u00b7 такой формат тяжелее оригинала, тяни ползунок влево';
+  info.textContent = fmt(it.orig.size) + ' \u2192 ' + fmt(blob.size) + ' \u00b7 ' + tail;
+}
+
+// Ручка шторки
+const cmpEl = document.getElementById('cmp');
+function setCmpX(clientX) {
+  const r = cmpEl.getBoundingClientRect();
+  if (!r.width) return;
+  const pct = Math.max(0, Math.min(100, (clientX - r.left) / r.width * 100));
+  cmpEl.style.setProperty('--x', pct.toFixed(1) + '%');
+}
+let cmpDrag = false;
+cmpEl.addEventListener('mousedown', e => { cmpDrag = true; setCmpX(e.clientX); e.preventDefault(); });
+document.addEventListener('mousemove', e => { if (cmpDrag) setCmpX(e.clientX); });
+document.addEventListener('mouseup', () => { cmpDrag = false; });
+cmpEl.addEventListener('touchstart', e => setCmpX(e.touches[0].clientX), { passive: true });
+cmpEl.addEventListener('touchmove', e => setCmpX(e.touches[0].clientX), { passive: true });
+
+document.getElementById('sq').addEventListener('input', scheduleComparePreview);
+
+['rw', 'rh'].forEach(id => document.getElementById(id).addEventListener('input', schedulePreview));
+document.getElementById('rfit').addEventListener('change', schedulePreview);
+document.querySelectorAll('.preset').forEach(p => p.addEventListener('click', schedulePreview));
+
+// Пометить файл «в работе» и дождаться перерисовки: WASM-кодирование блокирует
+// поток, поэтому индикатор надо показать ДО начала работы
+async function markBusy(item, label) {
+  item.busy = label;
+  renderAll();
+  await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+}
+function clearBusy(item) {
+  item.busy = null;
+}
+
+// Единая точка кодирования: обычные форматы — штатным canvas, AVIF — через WASM.
+async function encodeCanvas(canvas, mime, quality) {
+  if (mime !== 'image/avif') {
+    return new Promise(r => canvas.toBlob(r, mime, quality));
+  }
+  const mod = await loadAvif();
+  const data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+  // У AVIF своя шкала: q60 примерно соответствует JPEG 85-90.
+  // Поэтому ползунок пересчитываем, иначе на 92 файл выйдет тяжёлым и медленным.
+  const q = Math.max(30, Math.min(85, Math.round((quality == null ? 0.8 : quality) * 100) - 15));
+  const buf = await mod.encode(data, { quality: q });
+  return new Blob([buf], { type: 'image/avif' });
+}
+
+// Перекодировать готовый blob в другой формат (нужно там, где картинку отдаёт чужая библиотека)
+async function reencodeBlob(blob, mime, quality) {
+  const bmp = await createImageBitmap(blob);
+  const c = document.createElement('canvas');
+  c.width = bmp.width; c.height = bmp.height;
+  c.getContext('2d').drawImage(bmp, 0, 0);
+  return encodeCanvas(c, mime, quality);
+}
+function dlBlob(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+async function dlZip() {
+  const done = pool.filter(x => x.history.length && x.selected);
+  if (!done.length) return;
+  const zip = new JSZip();
+  done.forEach(x => zip.file(x.name, x.current));
+  const blob = await zip.generateAsync({ type: 'blob' });
+  dlBlob(blob, 'imager_files.zip');
+}
+function dlFile(id) {
+  const it = pool.find(x => x.id === id);
+  if (it) dlBlob(it.current, it.name);
+}
+// Сворачивание окон превью: состояние запоминается между запусками
+document.querySelectorAll('.prev-head').forEach(head => {
+  const key = 'prevOpen_' + head.dataset.prev;
+  const body = document.getElementById(head.dataset.prev + '-body');
+  const apply = open => {
+    body.hidden = !open;
+    head.classList.toggle('closed', !open);
+    head.querySelector('b').textContent = open ? 'Скрыть предпросмотр' : 'Окно предпросмотра';
+    localStorage.setItem(key, open ? '1' : '0');
+  };
+  apply(localStorage.getItem(key) !== '0');   // по умолчанию развёрнуто
+  head.addEventListener('click', () => apply(body.hidden));
+});
+
+
+// ═══════════════ ОКРАС: замена цвета ═══════════════
+// Берём цвет пипеткой с картинки, задаём новый — меняем все похожие пиксели.
+// «Похожесть» нужна всегда: в JPEG один визуальный цвет — это сотни разных значений.
+const rc = { from: '#ffffff', to: '#e6b450', tol: 50, mode: 'keep', picking: false, touched: false };
+
+function hexToRgb(hex) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return m ? { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) } : null;
+}
+function rgbToHex(r, g, b) {
+  return '#' + [r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+}
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+  let h = 0, sat = 0; const l = (mx + mn) / 2;
+  if (mx !== mn) {
+    const d = mx - mn;
+    sat = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+    if (mx === r) h = ((g - b) / d + (g < b ? 6 : 0));
+    else if (mx === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h /= 6;
+  }
+  return [h, sat, l];
+}
+function hslToRgb(h, s, l) {
+  if (s === 0) { const v = l * 255; return [v, v, v]; }
+  const f = (p, q, t) => {
+    if (t < 0) t += 1; if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  };
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+  return [f(p, q, h + 1 / 3) * 255, f(p, q, h) * 255, f(p, q, h - 1 / 3) * 255];
+}
+
+// Перекрасить холст. Возвращает, сколько пикселей затронуто.
+function recolorCanvas(canvas, fromHex, toHex, tolPercent, mode) {
+  const from = hexToRgb(fromHex), to = hexToRgb(toHex);
+  if (!from || !to) return 0;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const d = img.data;
+  // шкала нелинейная: на линейной уже 50% захватывали почти всю картинку.
+  // Возводим в квадрат — середина ползунка даёт умеренный захват, край по-прежнему «всё».
+  const k = tolPercent / 100;
+  const limit = k * k * 441;
+  const fromL = rgbToHsl(from.r, from.g, from.b)[2];
+  const toHsl = rgbToHsl(to.r, to.g, to.b);
+  let changed = 0;
+
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 3] === 0) continue;            // прозрачные пиксели не трогаем
+    const dr = d[i] - from.r, dg = d[i + 1] - from.g, db = d[i + 2] - from.b;
+    if (Math.sqrt(dr * dr + dg * dg + db * db) > limit) continue;
+    if (mode === 'flat') {
+      d[i] = to.r; d[i + 1] = to.g; d[i + 2] = to.b;
+    } else {
+      // сохраняем светлоту пикселя — остаются тени, блики и градиенты
+      const l = rgbToHsl(d[i], d[i + 1], d[i + 2])[2];
+      const nl = Math.max(0, Math.min(1, toHsl[2] + (l - fromL)));
+      const out = hslToRgb(toHsl[0], toHsl[1], nl);
+      d[i] = out[0]; d[i + 1] = out[1]; d[i + 2] = out[2];
+    }
+    changed++;
+  }
+  ctx.putImageData(img, 0, 0);
+  return changed;
+}
+
+let rcPrevTimer = null;
+function scheduleRecolorPreview() {
+  clearTimeout(rcPrevTimer);
+  rcPrevTimer = setTimeout(renderRecolorPreview, 120);
+}
+
+// Самый частый цвет картинки — разумная отправная точка для замены.
+// Иначе в поле стоит белый по умолчанию, его на картинке может не быть,
+// и превью честно пишет «ничего не попало», что выглядит как поломка.
+function dominantColor(canvas) {
+  const d = canvas.getContext('2d', { willReadFrequently: true })
+    .getImageData(0, 0, canvas.width, canvas.height).data;
+  // Группируем по огрублённой сетке (JPEG даёт тысячи почти одинаковых оттенков),
+  // но храним сумму настоящих значений — иначе вернём центр ячейки, а такого
+  // цвета на картинке может не быть, и малый диапазон промахнётся.
+  const buckets = new Map();
+  const step = Math.max(4, Math.floor(d.length / 4 / 40000) * 4);
+  for (let i = 0; i < d.length; i += step) {
+    if (d[i + 3] < 128) continue;
+    const key = ((d[i] >> 4) << 8) | ((d[i + 1] >> 4) << 4) | (d[i + 2] >> 4);
+    const b = buckets.get(key);
+    if (b) { b.n++; b.r += d[i]; b.g += d[i + 1]; b.b += d[i + 2]; }
+    else buckets.set(key, { n: 1, r: d[i], g: d[i + 1], b: d[i + 2] });
+  }
+  let best = null;
+  buckets.forEach(b => { if (!best || b.n > best.n) best = b; });
+  if (!best) return null;
+  return rgbToHex(best.r / best.n, best.g / best.n, best.b / best.n);
+}
+
+let rcAutoFor = null;   // для какого файла уже подобрали цвет
+
+async function renderRecolorPreview() {
+  const wrap = document.getElementById('rcprev-wrap');
+  const canvas = document.getElementById('rcprev');
+  if (!wrap || !canvas) return;
+  const it = pool.find(x => x.id === cropId) || pool[0];
+  if (!it) { wrap.style.display = 'none'; return; }
+
+  const src = await toCanvas(it.current);
+
+  // первый показ этого файла — подставляем его основной цвет
+  if (rcAutoFor !== it.id) {
+    rcAutoFor = it.id;
+    rc.touched = false;
+    const dom = dominantColor(src);
+    if (dom) {
+      rc.from = dom;
+      document.getElementById('rc-from-sw').style.background = dom;
+      document.getElementById('rc-from').value = dom;
+    }
+  }
+  canvas.width = src.width; canvas.height = src.height;
+  canvas.getContext('2d', { willReadFrequently: true }).drawImage(src, 0, 0);
+  const info = document.getElementById('rc-info');
+
+  if (!rc.touched) {
+    // ничего ещё не выбирали — показываем оригинал, чтобы его было видно
+    if (info) info.textContent = 'оригинал — выбери цвета, чтобы увидеть замену';
+    wrap.style.display = 'block';
+    return;
+  }
+
+  const n = recolorCanvas(canvas, rc.from, rc.to, rc.tol, rc.mode);
+  const total = canvas.width * canvas.height;
+  if (info) info.textContent = n ? ('затронуто ' + Math.round(n / total * 100) + '% пикселей')
+                                 : 'ничего не попало — увеличь диапазон';
+  wrap.style.display = 'block';
+}
+
+function rcSync() {
+  document.getElementById('rc-from-sw').style.background = rc.from;
+  document.getElementById('rc-from').value = rc.from;
+  document.getElementById('rc-to').value = rc.to;
+  document.getElementById('rc-to-color').value = rc.to;
+  document.getElementById('rc-tol-v').textContent = rc.tol + '%';
+  scheduleRecolorPreview();
+}
+
+document.getElementById('rc-tol').addEventListener('input', e => { rc.tol = parseInt(e.target.value); rc.touched = true; rcSync(); });
+document.getElementById('rc-mode').addEventListener('change', e => { rc.mode = e.target.value; rc.touched = true; scheduleRecolorPreview(); });
+document.getElementById('rc-to-color').addEventListener('input', e => { rc.to = e.target.value; rc.touched = true; rcSync(); });
+document.getElementById('rc-to').addEventListener('input', e => {
+  const v = e.target.value.trim(); if (hexToRgb(v)) { rc.to = v.charAt(0) === '#' ? v : '#' + v; rc.touched = true; rcSync(); }
+});
+document.getElementById('rc-from').addEventListener('input', e => {
+  const v = e.target.value.trim(); if (hexToRgb(v)) { rc.from = v.charAt(0) === '#' ? v : '#' + v; rc.touched = true; rcSync(); }
+});
+
+document.getElementById('rc-pick').addEventListener('click', () => {
+  rc.picking = !rc.picking;
+  document.getElementById('rc-pick').classList.toggle('on', rc.picking);
+  document.getElementById('rcprev').classList.toggle('picking', rc.picking);
+});
+
+document.getElementById('rcprev').addEventListener('click', async e => {
+  if (!rc.picking) return;
+  const it = pool.find(x => x.id === cropId) || pool[0];
+  if (!it) return;
+  const canvas = e.target;
+  const r = canvas.getBoundingClientRect();
+  const x = Math.floor((e.clientX - r.left) / r.width * canvas.width);
+  const y = Math.floor((e.clientY - r.top) / r.height * canvas.height);
+  const src = await toCanvas(it.current);      // цвет берём с оригинала, не с превью
+  const px = src.getContext('2d', { willReadFrequently: true }).getImageData(x, y, 1, 1).data;
+  rc.from = rgbToHex(px[0], px[1], px[2]);
+  rc.touched = true;
+  rc.picking = false;
+  document.getElementById('rc-pick').classList.remove('on');
+  canvas.classList.remove('picking');
+  rcSync();
+});
+
+async function applyRecolor() {
+  for (const it of selectedItems()) {
+    const canvas = await toCanvas(it.current);
+    recolorCanvas(canvas, rc.from, rc.to, rc.tol, rc.mode);
+    // пустое значение — «как у оригинала»: JPEG остаётся JPEG, остальное уходит в PNG
+    const type = document.getElementById('rc-fmt').value
+      || ((it.current.type === 'image/jpeg') ? 'image/jpeg' : 'image/png');
+    if (type === 'image/avif') await markBusy(it, 'AVIF…');
+    const blob = await encodeCanvas(canvas, type, 0.92);
+    clearBusy(it);
+    const baseName = it.name.replace(/\.[^.]+$/, '').replace(/_recolor$/, '');
+    applyResult(it, blob, 'окрас ' + rc.to, baseName + '_recolor' + extOf(type));
+    renderAll();
+  }
+}
+
+document.getElementById('btn-recolor').addEventListener('click', applyRecolor);
+
+
+document.getElementById('btn-clear-cache').addEventListener('click', async () => {
+  const b = document.getElementById('btn-clear-cache');
+  b.textContent = 'чищу…';
+  await resetBgCache();
+  avifMod = null; avifLoading = null;
+  b.textContent = 'кэш сброшен, обнови страницу';
+});
+
+document.querySelectorAll('[data-zip]').forEach(b => b.addEventListener('click', () => dlZip(b.dataset.zip)));
+
+function toCanvas(file, w, h, fit) {
+  return new Promise(resolve => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const sw = img.naturalWidth, sh = img.naturalHeight;
+      const canvas = document.createElement('canvas');
+      if (w && h) {
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (fit === 'stretch') ctx.drawImage(img, 0, 0, w, h);
+        else if (fit === 'cover') {
+          const r = Math.max(w / sw, h / sh), nw = sw * r, nh = sh * r;
+          ctx.drawImage(img, (w - nw) / 2, (h - nh) / 2, nw, nh);
+        } else {
+          const r = Math.min(w / sw, h / sh), nw = sw * r, nh = sh * r;
+          ctx.drawImage(img, (w - nw) / 2, (h - nh) / 2, nw, nh);
+        }
+      } else {
+        canvas.width = sw; canvas.height = sh;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+      }
+      URL.revokeObjectURL(url);
+      resolve(canvas);
+    };
+    img.src = url;
+  });
+}
+
+function setupDZ(ns) {
+  const dz = document.getElementById('dz-' + ns);
+  const fi = document.getElementById('fi-' + ns);
+  dz.addEventListener('click', () => fi.click());
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('drag-over');
+    if (ns === 'crop') handleCropFile(e.dataTransfer.files);
+    else handleFiles(e.dataTransfer.files, ns);
+  });
+  fi.addEventListener('change', e => {
+    if (ns === 'crop') handleCropFile(e.target.files);
+    else handleFiles(e.target.files, ns);
+  });
+}
+['convert', 'resize', 'compress', 'crop', 'bgremove', 'recolor'].forEach(setupDZ);
+
+function handleFiles(fileList, ns) {
+  addToPool(fileList);
+}
+function removeFile(id) {
+  const i = pool.findIndex(x => x.id === id);
+  if (i >= 0) pool.splice(i, 1);
+  if (cropId === id) {
+    cropState = null;
+    cropId = pool.length ? pool[pool.length - 1].id : null;
+    document.getElementById('crop-editor').style.display = 'none';
+    if (pool.length) loadCropFromPool();
+  }
+  renderAll();
+}
+window.removeFile = removeFile;
+window.dlFile = dlFile;
+
+function renderBar(ns) {
+  const bar = document.getElementById('bar-' + ns);
+  if (!bar) return;
+  const sel = pool.filter(x => x.selected).length;
+  if (ns === 'crop') {
+    bar.innerHTML = pool.length
+      ? `<span>${pool.length} файл(ов), выбрано ${sel} · клик по файлу открывает его в редакторе</span>
+         <button onclick="pickAll(true)">выбрать все</button>
+         <button onclick="pickAll(false)">снять</button>
+         <button onclick="clearPool()">очистить</button>`
+      : '';
+    bar.style.display = pool.length ? 'flex' : 'none';
+    return;
+  }
+  bar.innerHTML = pool.length
+    ? `<span>${pool.length} файл(ов), выбрано ${sel}</span>
+       <button onclick="pickAll(true)">выбрать все</button>
+       <button onclick="pickAll(false)">снять</button>
+       <button onclick="clearPool()">очистить</button>`
+    : '';
+  bar.style.display = pool.length ? 'flex' : 'none';
+}
+
+function render(ns) {
+  renderBar(ns);
+  const list = document.getElementById('list-' + ns);
+  if (!list) return;
+  list.innerHTML = '';
+  pool.forEach(it => {
+    const changed = it.history.length > 0;
+    const saved = changed ? Math.round((1 - it.current.size / it.orig.size) * 100) : null;
+    const url = URL.createObjectURL(it.current);
+    const chain = changed ? it.history.map(h => h.op).join(' → ') : '';
+    const item = document.createElement('div');
+    item.className = 'file-item' + (it.selected ? ' picked' : '') + (it.id === cropId ? ' active' : '');
+    item.style.cursor = 'pointer';
+    item.onclick = () => { cropId = it.id; renderAll(); };
+    item.innerHTML = `
+      <label class="file-check" onclick="event.stopPropagation()"><input type="checkbox" ${it.selected ? 'checked' : ''} onchange="toggleItem(${it.id})"></label>
+      <img src="${url}" class="file-thumb">
+      <div class="file-info">
+        <div class="file-name">${it.name}</div>
+        <div class="file-meta">${fmt(it.orig.size)}${changed ? ` → ${fmt(it.current.size)} <span class="${saved > 0 ? 'saved' : 'bigger'}">${saved > 0 ? '-' + saved + '%' : '+' + Math.abs(saved) + '%'}</span>` : ''}</div>
+        ${chain ? `<div class="file-chain">${chain}</div>` : ''}
+      </div>
+      ${it.busy ? `<span class="file-busy"><i></i>${it.busy}</span>` : ''}
+      ${changed ? `<button class="btn-sm" title="Скачать" onclick="event.stopPropagation(); dlFile(${it.id})">⬇</button><button class="btn-undo" title="Вернуть оригинал" onclick="event.stopPropagation(); resetItem(${it.id})">↺</button>` : '<span class="file-status">·</span>'}
+      <button class="btn-del" title="Удалить" onclick="event.stopPropagation(); removeFile(${it.id})">✕</button>`;
+    list.appendChild(item);
+  });
+}
+
+// список файлов во вкладке «Кроп»: там работаем с одним — выбранным
+function renderCropList() {
+  const list = document.getElementById('list-crop');
+  if (!list) return;
+  list.innerHTML = '';
+  pool.forEach(it => {
+    const url = URL.createObjectURL(it.current);
+    const item = document.createElement('div');
+    item.className = 'file-item' + (it.id === cropId ? ' picked' : '');
+    item.style.cursor = 'pointer';
+    item.onclick = () => { cropId = it.id; loadCropFromPool(); renderAll(); };
+    const changed = it.history.length > 0;
+    const saved = changed ? Math.round((1 - it.current.size / it.orig.size) * 100) : null;
+    const chain = changed ? it.history.map(h => h.op).join(' → ') : '';
+    item.innerHTML = `
+      <label class="file-check" onclick="event.stopPropagation()"><input type="checkbox" ${it.selected ? 'checked' : ''} onchange="toggleItem(${it.id})"></label>
+      <img src="${url}" class="file-thumb">
+      <div class="file-info">
+        <div class="file-name">${it.name}</div>
+        <div class="file-meta">${fmt(it.orig.size)}${changed ? ` → ${fmt(it.current.size)} <span class="${saved > 0 ? 'saved' : 'bigger'}">${saved > 0 ? '-' + saved + '%' : '+' + Math.abs(saved) + '%'}</span>` : ''}${it.id === cropId ? ' · редактируется' : ''}</div>
+        ${chain ? `<div class="file-chain">${chain}</div>` : ''}
+      </div>
+      ${it.busy ? `<span class="file-busy"><i></i>${it.busy}</span>` : ''}
+      ${changed ? `<button class="btn-sm" title="Скачать" onclick="event.stopPropagation(); dlFile(${it.id})">⬇</button><button class="btn-undo" title="Вернуть оригинал" onclick="event.stopPropagation(); resetItem(${it.id})">↺</button>` : ''}
+      <button class="btn-del" title="Удалить" onclick="event.stopPropagation(); removeFile(${it.id})">✕</button>`;
+    list.appendChild(item);
+  });
+}
+
+// === КОНВЕРТЕР ===
+document.getElementById('btn-convert').addEventListener('click', async () => {
+  const items = selectedItems();
+  const q = parseInt(document.getElementById('cq').value) / 100;
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    const canvas = await toCanvas(it.current);
+    if (convertMode === 'image/avif') await markBusy(it, 'AVIF…');
+    const blob = await encodeCanvas(canvas, convertMode, q);
+    clearBusy(it);
+    const baseName = it.name.replace(/\.[^.]+$/, '');
+    applyResult(it, blob, extOf(convertMode).slice(1).toUpperCase(), baseName + extOf(convertMode));
+    renderAll();
+  }
+});
+
+// === РЕСАЙЗ ===
+document.getElementById('btn-resize').addEventListener('click', async () => {
+  const items = selectedItems();
+  const w = parseInt(document.getElementById('rw').value);
+  const h = parseInt(document.getElementById('rh').value);
+  const fit = document.getElementById('rfit').value;
+  const mime = document.getElementById('rfmt').value;
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    const canvas = await toCanvas(it.current, w, h, fit);
+    if (mime === 'image/avif') await markBusy(it, 'AVIF…');
+    const blob = await encodeCanvas(canvas, mime, 0.92);
+    clearBusy(it);
+    const baseName = it.name.replace(/\.[^.]+$/, '').replace(/_\d+x\d+$/, '');
+    applyResult(it, blob, w + '×' + h, baseName + '_' + w + 'x' + h + extOf(mime));
+    renderAll();
+  }
+});
+
+// === СЖАТИЕ ===
+document.getElementById('btn-compress').addEventListener('click', async () => {
+  const items = selectedItems();
+  const q = parseInt(document.getElementById('sq').value) / 100;
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    const canvas = await toCanvas(it.current);
+    let mime = it.current.type;
+    if (mime !== 'image/png' && mime !== 'image/webp' && mime !== 'image/avif') mime = 'image/jpeg';
+    if (mime === 'image/avif') await markBusy(it, 'AVIF…');
+    const blob = await encodeCanvas(canvas, mime, q);
+    clearBusy(it);
+    const baseName = it.name.replace(/\.[^.]+$/, '').replace(/_compressed$/, '');
+    applyResult(it, blob, 'сжатие ' + Math.round(q * 100) + '%', baseName + '_compressed' + extOf(mime));
+    renderAll();
+  }
+});
+
+// === КРОП ===
+let cropState = null;
+function handleCropFile(fileList) {
+  const files = fileList && fileList.length ? Array.from(fileList) : (fileList ? [fileList] : []);
+  if (!files.length) return;
+  addToPool(files);                     // cropId уже указывает на последний добавленный
+  loadCropFromPool();
+}
+
+// Копия в редакторе отстала от пула (файл сменился или его успели обработать)
+function cropStale() {
+  const it = pool.find(x => x.id === cropId);
+  return !!it && (!cropState || cropState.item !== it || cropState.blob !== it.current);
+}
+
+// Открыть в редакторе текущую версию выбранного файла из общего пула
+function loadCropFromPool() {
+  let it = pool.find(x => x.id === cropId);
+  if (!it) it = pool[pool.length - 1];
+  if (!it) return;
+  cropId = it.id;
+  const url = URL.createObjectURL(it.current);
+  const img = document.getElementById('crop-img');
+  img.onload = () => {
+    document.getElementById('crop-editor').style.display = 'block';
+    cropState = { item: it, blob: it.current, natW: img.naturalWidth, natH: img.naturalHeight, sel: null };
+    document.getElementById('crop-sel').style.display = 'none';
+    const info = document.getElementById('crop-info');
+    if (info) info.textContent = '';
+    updateCropButtons();
+  };
+  img.src = url;
+}
+const cropWrap = document.getElementById('crop-wrap');
+const cropSel = document.getElementById('crop-sel');
+let cropDrag = null;
+
+cropWrap.addEventListener('mousedown', e => {
+  if (!cropState) return;
+  const t = e.target;
+  const rect = cropWrap.getBoundingClientRect();
+  if (t.classList.contains('crop-handle')) {
+    cropDrag = { type: 'resize', handle: t.dataset.h, startX: e.clientX, startY: e.clientY, sel: { ...cropState.sel } };
+  } else if (t === cropSel || t.parentElement === cropSel) {
+    cropDrag = { type: 'move', startX: e.clientX, startY: e.clientY, sel: { ...cropState.sel } };
+  } else {
+    const x = e.clientX - rect.left, y = e.clientY - rect.top;
+    cropState.sel = { x, y, w: 0, h: 0 };
+    cropSel.style.display = 'block';
+    cropDrag = { type: 'new', startX: x, startY: y };
+    updateCropSel();
+  }
+  e.preventDefault();
+});
+document.addEventListener('mousemove', e => {
+  if (!cropDrag || !cropState) return;
+  const rect = cropWrap.getBoundingClientRect();
+  if (cropDrag.type === 'new') {
+    const x = e.clientX - rect.left, y = e.clientY - rect.top;
+    cropState.sel = {
+      x: Math.min(cropDrag.startX, x),
+      y: Math.min(cropDrag.startY, y),
+      w: Math.abs(x - cropDrag.startX),
+      h: Math.abs(y - cropDrag.startY)
+    };
+    updateCropSel();
+  } else if (cropDrag.type === 'move') {
+    const dx = e.clientX - cropDrag.startX, dy = e.clientY - cropDrag.startY;
+    cropState.sel = {
+      x: Math.max(0, Math.min(rect.width - cropDrag.sel.w, cropDrag.sel.x + dx)),
+      y: Math.max(0, Math.min(rect.height - cropDrag.sel.h, cropDrag.sel.y + dy)),
+      w: cropDrag.sel.w, h: cropDrag.sel.h
+    };
+    updateCropSel();
+  } else if (cropDrag.type === 'resize') {
+    const dx = e.clientX - cropDrag.startX, dy = e.clientY - cropDrag.startY;
+    const s = { ...cropDrag.sel };
+    if (cropDrag.handle.includes('r')) s.w = Math.max(10, s.w + dx);
+    if (cropDrag.handle.includes('l')) { s.x = s.x + dx; s.w = Math.max(10, s.w - dx); }
+    if (cropDrag.handle.includes('b')) s.h = Math.max(10, s.h + dy);
+    if (cropDrag.handle.includes('t')) { s.y = s.y + dy; s.h = Math.max(10, s.h - dy); }
+    cropState.sel = s;
+    updateCropSel();
+  }
+});
+document.addEventListener('mouseup', () => { cropDrag = null; });
+
+// Кнопки «Обрезать» и «Сбросить выделение» активны только когда область выделена
+function updateCropButtons() {
+  const has = !!(cropState && cropState.sel && cropState.sel.w > 2 && cropState.sel.h > 2);
+  [['btn-crop', 'Обрезать'], ['btn-crop-reset', 'Сбросить выделение']].forEach(([id, label]) => {
+    const b = document.getElementById(id);
+    if (!b) return;
+    b.disabled = !has;
+    b.style.opacity = has ? '' : '0.45';
+    b.style.cursor = has ? '' : 'not-allowed';
+    b.textContent = has ? label : (id === 'btn-crop' ? 'Выдели область мышью' : label);
+  });
+}
+
+function updateCropSel() {
+  updateCropButtons();
+  if (!cropState || !cropState.sel) return;
+  const s = cropState.sel;
+  cropSel.style.left = s.x + 'px';
+  cropSel.style.top = s.y + 'px';
+  cropSel.style.width = s.w + 'px';
+  cropSel.style.height = s.h + 'px';
+  document.getElementById('crop-info').textContent =
+    Math.round(s.w * cropState.natW / cropWrap.offsetWidth) + '×' +
+    Math.round(s.h * cropState.natH / cropWrap.offsetHeight) + ' px';
+}
+
+document.getElementById('btn-crop').addEventListener('click', async () => {
+  if (!cropState || !cropState.sel || cropState.sel.w < 5) return;
+  const s = cropState.sel;
+  const scale = cropState.natW / cropWrap.offsetWidth;
+  const sx = s.x * scale, sy = s.y * scale, sw = s.w * scale, sh = s.h * scale;
+  const canvas = document.createElement('canvas');
+  canvas.width = sw; canvas.height = sh;
+  const img = document.getElementById('crop-img');
+  canvas.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+  const mime = document.getElementById('crop-fmt').value;
+  const it = cropState.item;
+  if (mime === 'image/avif') await markBusy(it, 'AVIF…');
+  const blob = await encodeCanvas(canvas, mime, 0.92);
+  clearBusy(it);
+  const baseName = it.name.replace(/\.[^.]+$/, '').replace(/_cropped$/, '');
+  applyResult(it, blob, 'кроп ' + Math.round(sw) + '×' + Math.round(sh), baseName + '_cropped' + extOf(mime));
+  renderAll();
+});
+document.getElementById('btn-crop-reset').addEventListener('click', () => {
+  // снимаем рамку выделения, картинка остаётся в редакторе
+  if (cropState) cropState.sel = null;
+  cropDrag = null;
+  document.getElementById('crop-sel').style.display = 'none';
+  const info = document.getElementById('crop-info');
+  if (info) info.textContent = '';
+  updateCropButtons();
+});
+
+// === УДАЛЕНИЕ ФОНА ===
+let bgRemovalLib = null;
+async function loadBgRemoval(force) {
+  if (bgRemovalLib && !force) return bgRemovalLib;
+  const btn = document.getElementById('btn-bgremove');
+  btn.textContent = 'Загрузка модели (~170MB)...';
+  // ?v= обходит кэш модуля, если предыдущая загрузка оказалась битой
+  const url = 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm' + (force ? '?v=' + Date.now() : '');
+  const mod = await import(url);
+  // у пакета нет default-экспорта, берём функцию явно
+  const fn = mod.removeBackground || (mod.default && mod.default.removeBackground) || mod.default;
+  if (typeof fn !== 'function') throw new Error('Библиотека загрузилась неполностью');
+  bgRemovalLib = { removeBackground: fn };
+  btn.textContent = 'Удалить фон';
+  return bgRemovalLib;
+}
+
+// Библиотека держит модель в Cache Storage браузера. Если запись побилась
+// (например, вкладку закрыли во время загрузки 170MB), она падает при следующем
+// запуске — чистим кэш и грузим заново.
+async function resetBgCache() {
+  bgRemovalLib = null;
+  if (!window.caches) return;
+  try {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(k => /imgly|background|onnx|model/i.test(k)).map(k => caches.delete(k)));
+  } catch (e) { console.warn('Не смог очистить кэш моделей:', e); }
+}
+document.getElementById('btn-bgremove').addEventListener('click', async () => {
+  const items = selectedItems();
+  const mime = document.getElementById('bgfmt').value;
+  const btn = document.getElementById('btn-bgremove');
+  const failed = [];
+  try {
+    const lib = await loadBgRemoval();
+    let removeBackground = lib.removeBackground || lib;
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      btn.textContent = `Обработка ${i + 1}/${items.length}...`;
+      btn.disabled = true;
+      try {
+      const isAvif = mime === 'image/avif';
+      await markBusy(it, 'фон…');
+      const opts = { model: 'isnet', output: { format: isAvif ? 'image/png' : mime, quality: 1 } };
+      let blobOut;
+      try {
+        blobOut = await removeBackground(it.current, opts);
+      } catch (firstErr) {
+        // скорее всего испорчен кэш модели — чистим и пробуем ещё раз
+        console.warn('Первая попытка не удалась, чищу кэш модели:', firstErr);
+        await markBusy(it, 'перезагрузка модели…');
+        await resetBgCache();
+        const lib2 = await loadBgRemoval(true);
+        removeBackground = lib2.removeBackground;
+        blobOut = await removeBackground(it.current, opts);
+      }
+      if (isAvif) {
+        await markBusy(it, 'AVIF…');
+        blobOut = await reencodeBlob(blobOut, 'image/avif', 0.8);
+      }
+      const baseName = it.name.replace(/\.[^.]+$/, '').replace(/_nobg$/, '');
+      applyResult(it, blobOut, 'без фона', baseName + '_nobg' + extOf(mime));
+      } catch (err) {
+        // один файл не получился — остальные всё равно обрабатываем
+        console.error('Не удалось убрать фон:', it.name, err);
+        failed.push(it.name + ': ' + (err && err.message ? err.message : err));
+      } finally {
+        clearBusy(it);
+        renderAll();
+      }
+    }
+  } catch (e) {
+    console.error(e);
+    failed.push('Библиотека удаления фона не загрузилась: ' + (e && e.message ? e.message : e));
+  } finally {
+    btn.disabled = false;
+    delete btn.dataset.label;
+    btn.textContent = 'Удалить фон';
+    renderAll();
+    if (failed.length) alert('Не обработано файлов: ' + failed.length + String.fromCharCode(10,10) + failed.join(String.fromCharCode(10,10)));
+  }
+});
+</script>
+</body>
+</html>
